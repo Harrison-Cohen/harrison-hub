@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Harrison's Hub</title>
+<meta name="theme-color" content="#17181b">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Harrison's Hub">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #121214;
+    --bg2: #17181b;
+    --card: #1e1f23;
+    --border: #2a2b30;
+    --text: #e8e8ea;
+    --text-soft: #9a9ba1;
+    --text-faint: #6d6e75;
+    --accent: #5b7c99;
+    --accent-dark: #4a6780;
+    --accent-soft: rgba(91, 124, 153, 0.16);
+    --red: #b9695f;
+    --red-soft: rgba(185, 105, 95, 0.14);
+    --green: #6f9a7c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+
+  .topbar {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding-top: env(safe-area-inset-top);
+  }
+  .topbar-inner { max-width: 880px; margin: 0 auto; padding: 18px 20px 0; }
+  .brand { margin: 0 0 14px; font-size: 20px; font-weight: 700; letter-spacing: -0.2px; color: var(--text); }
+  .tabs {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding-bottom: 12px;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-soft);
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background .12s ease, color .12s ease;
+    white-space: nowrap;
+  }
+  .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .tab-btn.active { background: var(--accent-soft); color: var(--accent); border-color: rgba(91,124,153,0.3); }
+
+  .content { max-width: 880px; margin: 0 auto; padding: 24px 20px 80px; }
+
+  .screen-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px; gap: 12px; flex-wrap: wrap;
+  }
+  .screen-head h2 { margin: 0; font-size: 22px; font-weight: 700; }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    margin-bottom: 18px;
+  }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px; gap: 10px; flex-wrap: wrap;
+  }
+  .panel-head h3 { margin: 0; font-size: 14.5px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .count { font-size: 11.5px; font-weight: 700; color: var(--text-faint); background: rgba(255,255,255,0.04); padding: 1px 8px; border-radius: 999px; }
+
+  .sort-toggle { display: flex; gap: 6px; }
+  .chip {
+    font-size: 11.5px; font-weight: 600; color: var(--text-soft); background: transparent;
+    border: 1px solid var(--border); border-radius: 999px; padding: 5px 12px; cursor: pointer;
+    transition: all .12s ease;
+  }
+  .chip:hover { color: var(--text); }
+  .chip.active { background: var(--accent-soft); color: var(--accent); border-color: rgba(91,124,153,0.35); }
+
+  .row {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .row:last-child { border-bottom: none; }
+  .row-main { flex: 1; min-width: 0; }
+  .row-title { font-size: 14.5px; font-weight: 600; color: var(--text); }
+  .row-notes { font-size: 13px; color: var(--text-soft); margin-top: 4px; white-space: pre-wrap; }
+  .row-notes.empty-note { font-style: italic; color: var(--text-faint); }
+  .row-meta { font-size: 12px; color: var(--text-faint); margin-top: 4px; }
+  .row-meta-list { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; }
+  .field-value { font-size: 12.5px; color: var(--text-soft); }
+  .field-label-tag { color: var(--text-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; margin-right: 4px; }
+  .rating-badge { font-size: 12px; color: var(--text-faint); font-weight: 600; margin-top: 4px; }
+
+  .row-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
+
+  .btn {
+    background: transparent; color: var(--text-soft); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
+    transition: all .12s ease; font-family: inherit;
+  }
+  .btn:hover { color: var(--text); border-color: #3a3b42; }
+  .btn-sm { padding: 6px 11px; font-size: 12px; }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: var(--accent-dark); color: #fff; }
+  .btn-accent { color: var(--accent); border-color: rgba(91,124,153,0.4); }
+  .btn-accent:hover { background: var(--accent-soft); color: var(--accent); }
+  .btn-danger { color: var(--red); border-color: rgba(185,105,95,0.3); }
+  .btn-danger:hover { background: var(--red-soft); color: var(--red); }
+
+  .empty { color: var(--text-faint); font-size: 13px; padding: 20px 4px; text-align: center; }
+  .loading { color: var(--text-faint); font-size: 13px; padding: 40px 4px; text-align: center; }
+  .group-label {
+    font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px;
+    color: var(--text-faint); margin: 16px 0 4px;
+  }
+  .quote-text { font-size: 14.5px; color: var(--text); line-height: 1.6; }
+
+  .recipe-card { padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .recipe-card:last-child { border-bottom: none; }
+  .recipe-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+  .recipe-section { margin-top: 10px; }
+  .recipe-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-faint); margin-bottom: 4px; }
+  .ingredient-list, .step-list { margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-soft); }
+  .ingredient-list li, .step-list li { margin-bottom: 3px; }
+
+  .config-warning {
+    background: rgba(185,105,95,0.1); border: 1px solid rgba(185,105,95,0.3); color: #d99a92;
+    border-radius: 10px; padding: 12px 14px; font-size: 13px; margin-bottom: 18px;
+  }
+  .config-warning code { background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: 40px 16px; overflow-y: auto; z-index: 100;
+  }
+  .modal-box {
+    background: var(--card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 22px 24px 24px; width: 100%; max-width: 440px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .modal-box h3 { margin: 0 0 10px; font-size: 17px; font-weight: 700; }
+  .modal-box label { font-size: 12px; font-weight: 600; color: var(--text-soft); margin: 10px 0 4px; }
+  .modal-box input[type="text"],
+  .modal-box input[type="number"],
+  .modal-box input[type="date"],
+  .modal-box select,
+  .modal-box textarea {
+    width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit; outline: none;
+    transition: border-color .12s ease;
+  }
+  .modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus { border-color: var(--accent); }
+  .modal-box textarea { resize: vertical; min-height: 60px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text); font-weight: 500; }
+  .checkbox-row input { width: auto; }
+
+  .segmented { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin: 6px 0 4px; }
+  .seg-btn {
+    flex: 1; background: transparent; border: none; color: var(--text-soft); font-size: 12.5px;
+    font-weight: 600; padding: 9px 0; cursor: pointer; font-family: inherit;
+  }
+  .seg-btn.active { background: var(--accent-soft); color: var(--accent); }
+
+  .list-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .list-row input { flex: 1; }
+  .icon-btn {
+    flex-shrink: 0; background: transparent; border: 1px solid var(--border); color: var(--text-faint);
+    border-radius: 8px; width: 34px; height: 34px; font-size: 14px; cursor: pointer;
+  }
+  .icon-btn:hover { color: var(--red); border-color: rgba(185,105,95,0.3); }
+
+  .field-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+  .field-row .field-label { flex: 1 1 120px; min-width: 0; }
+  .field-row select { flex: 0 0 auto; width: auto; }
+  .field-row .field-options { flex: 1 1 100%; }
+
+  @media (max-width: 640px) {
+    .row { flex-direction: column; }
+    .row-actions { justify-content: flex-start; }
+    .recipe-head { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <h1 class="brand">Harrison's Hub</h1>
+    <nav class="tabs" id="tabs"></nav>
+  </div>
+</header>
+
+<main class="content" id="content">
+  <div class="loading">Loading…</div>
+</main>
+
+<div id="modal-root"></div>
+
+<script>
+// ==== SET THIS after deploying Code.gs as a Web App (see setup notes in Code.gs / README) ====
+const SCRIPT_URL = "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE";
+
+const FIELD_TYPES = [
+  { value: 'text', label: 'Short text' },
+  { value: 'textarea', label: 'Long text / notes' },
+  { value: 'rating', label: 'Rating (1–10)' },
+  { value: 'date', label: 'Date' },
+  { value: 'checkbox', label: 'Checkbox' },
+  { value: 'dropdown', label: 'Dropdown' }
+];
+
+const state = {
+  movies: [], quotes: [], recipes: [], templates: [], customTabs: [], customTabsData: {},
+  activeTab: 'movies',
+  moviesSort: 'rating',
+  recipesSort: 'name'
+};
+
+// ---------------- Utilities ----------------
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s == null ? '' : String(s);
+  return d.innerHTML;
+}
+function escapeAttr(s) {
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+function emptyState(text) {
+  return '<div class="empty">' + escapeHtml(text) + '</div>';
+}
+function formatNumber(n) {
+  const num = Number(n);
+  if (isNaN(num)) return '';
+  return String(Math.round(num * 100) / 100);
+}
+function formatTimestamp(ms) {
+  const n = Number(ms);
+  if (!n) return '';
+  return new Date(n).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+async function apiCall(action, params) {
+  const url = new URL(SCRIPT_URL);
+  url.searchParams.set('action', action);
+  if (params) {
+    Object.keys(params).forEach(function (k) {
+      const v = params[k];
+      url.searchParams.set(k, v === undefined || v === null ? '' : v);
+    });
+  }
+  const res = await fetch(url.toString());
+  const data = await res.json();
+  if (data && data.error) throw new Error(data.error);
+  return data;
+}
+
+// ---------------- Modal ----------------
+
+function openModal(html) {
+  document.getElementById('modal-root').innerHTML =
+    '<div class="modal-overlay" onclick="if(event.target===this) closeModal()"><div class="modal-box">' + html + '</div></div>';
+}
+function closeModal() {
+  document.getElementById('modal-root').innerHTML = '';
+}
+
+// ---------------- Nav / render root ----------------
+
+function renderNav() {
+  const staticTabs = [
+    { id: 'movies', label: 'Movies' },
+    { id: 'quotes', label: 'Quotes' },
+    { id: 'recipes', label: 'Recipes' },
+    { id: 'templates', label: 'Templates' }
+  ];
+  const customTabsNav = state.customTabs.map(function (t) { return { id: t.id, label: t.tabName }; });
+  const all = staticTabs.concat(customTabsNav);
+  document.getElementById('tabs').innerHTML = all.map(function (t) {
+    return '<button class="tab-btn ' + (state.activeTab === t.id ? 'active' : '') + '" onclick="switchTab(\'' + t.id + '\')">' +
+      escapeHtml(t.label) + '</button>';
+  }).join('');
+}
+
+function switchTab(id) {
+  state.activeTab = id;
+  render();
+}
+
+function render() {
+  renderNav();
+  const content = document.getElementById('content');
+  if (state.activeTab === 'movies') content.innerHTML = renderMovies();
+  else if (state.activeTab === 'quotes') content.innerHTML = renderQuotes();
+  else if (state.activeTab === 'recipes') content.innerHTML = renderRecipes();
+  else if (state.activeTab === 'templates') content.innerHTML = renderTemplates();
+  else content.innerHTML = renderCustomTabScreen(state.activeTab);
+}
+
+async function loadAll() {
+  try {
+    const data = await apiCall('getAll');
+    state.movies = data.movies || [];
+    state.quotes = data.quotes || [];
+    state.recipes = data.recipes || [];
+    state.templates = data.templates || [];
+    state.customTabs = data.customTabs || [];
+    state.customTabsData = data.customTabsData || {};
+  } catch (err) {
+    document.getElementById('content').innerHTML =
+      '<div class="empty">Could not load data — check that SCRIPT_URL is set correctly.<br>' + escapeHtml(err.message || String(err)) + '</div>';
+    renderNav();
+    return;
+  }
+  render();
+}
+
+// ==================================================================
+// MOVIES
+// ==================================================================
+
+function renderMovies() {
+  const toWatch = state.movies.filter(function (m) { return m.status === 'towatch'; });
+  const watched = state.movies.filter(function (m) { return m.status === 'watched'; });
+  const sorted = watched.slice().sort(function (a, b) {
+    if (state.moviesSort === 'date') return (Number(b.dateAdded) || 0) - (Number(a.dateAdded) || 0);
+    return (Number(b.rating) || 0) - (Number(a.rating) || 0);
+  });
+
+  return '' +
+    '<div class="screen-head"><h2>Movies</h2><button class="btn btn-primary" onclick="openAddMovieModal()">+ Add Movie</button></div>' +
+    '<section class="panel">' +
+      '<div class="panel-head"><h3>To Watch <span class="count">' + toWatch.length + '</span></h3></div>' +
+      (toWatch.length === 0 ? emptyState('Nothing queued up yet.') : toWatch.map(renderToWatchRow).join('')) +
+    '</section>' +
+    '<section class="panel">' +
+      '<div class="panel-head">' +
+        '<h3>Watched <span class="count">' + watched.length + '</span></h3>' +
+        '<div class="sort-toggle">' +
+          '<button class="chip ' + (state.moviesSort === 'rating' ? 'active' : '') + '" onclick="setMoviesSort(\'rating\')">Rating</button>' +
+          '<button class="chip ' + (state.moviesSort === 'date' ? 'active' : '') + '" onclick="setMoviesSort(\'date\')">Date added</button>' +
+        '</div>' +
+      '</div>' +
+      (sorted.length === 0 ? emptyState('Nothing watched yet.') : sorted.map(renderWatchedRow).join('')) +
+    '</section>';
+}
+
+function setMoviesSort(mode) { state.moviesSort = mode; render(); }
+
+function renderToWatchRow(m) {
+  return '' +
+    '<div class="row">' +
+      '<div class="row-main">' +
+        '<div class="row-title">' + escapeHtml(m.title) + '</div>' +
+        (m.notes ? '<div class="row-notes">' + escapeHtml(m.notes) + '</div>' : '') +
+      '</div>' +
+      '<div class="row-actions">' +
+        '<button class="btn btn-sm btn-accent" onclick="openMarkWatchedModal(\'' + m.id + '\')">Mark Watched</button>' +
+        '<button class="btn btn-sm" onclick="openEditMovieModal(\'' + m.id + '\')">Edit</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="confirmDeleteMovie(\'' + m.id + '\')">Delete</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function renderWatchedRow(m) {
+  return '' +
+    '<div class="row">' +
+      '<div class="row-main">' +
+        '<div class="row-title">' + escapeHtml(m.title) + '</div>' +
+        '<div class="rating-badge">★ ' + formatNumber(m.rating) + ' / 10</div>' +
+        (m.notes ? '<div class="row-notes">' + escapeHtml(m.notes) + '</div>' : '') +
+      '</div>' +
+      '<div class="row-actions">' +
+        '<button class="btn btn-sm" onclick="openEditMovieModal(\'' + m.id + '\')">Edit</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="confirmDeleteMovie(\'' + m.id + '\')">Delete</button>' +
+      '</div>' +
+    '</div>';
+}
+
+let movieFormTarget = 'towatch';
+
+function openAddMovieModal() {
+  movieFormTarget = 'towatch';
+  openModal('' +
+    '<h3>Add Movie</h3>' +
+    '<div class="segmented">' +
+      '<button type="button" class="seg-btn active" id="seg-towatch" onclick="setMovieFormTarget(\'towatch\')">To Watch</button>' +
+      '<button type="button" class="seg-btn" id="seg-watched" onclick="setMovieFormTarget(\'watched\')">Watched</button>' +
+    '</div>' +
+    '<label>Title</label>' +
+    '<input type="text" id="movie-title" placeholder="Movie title">' +
+    '<div id="movie-rating-field" style="display:none;">' +
+      '<label>Rating (0–10)</label>' +
+      '<input type="number" id="movie-rating" min="0" max="10" step="0.01" placeholder="e.g. 8.75">' +
+    '</div>' +
+    '<label>Notes (optional)</label>' +
+    '<textarea id="movie-notes" rows="3" placeholder="Optional notes"></textarea>' +
+    '<div class="modal-actions">' +
+      '<button class="btn" onclick="closeModal()">Cancel</button>' +
+      '<button class="btn btn-primary" onclick="submitAddMovie()">Add</button>' +
+    '</div>'
+  );
+}
+
+function setMovieFormTarget(t) {
+  movieFormTarget = t;
+  document.getElementById('seg-towatch').classList.toggle('active', t === 'towatch');
+  document.getElementById('seg-watched').classList.toggle('active', t === 'watched');
+  document.getElementById('movie-rating-field').style.display = t === 'watched' ? '' : 'none';
+}
+
+async function submitAddMovie() {
+  const title = document.getElementById('movie-title').value.trim();
+  if (!title) { alert('Title is required.'); return; }
+  const notes = document.getElementById('movie-notes').value.trim();
+  let data;
+  if (movieFormTarget === 'watched') {
+    const rating = document.getElementById('movie-rating').value;
+    if (rating === '') { alert('Rating is required for a Watched entry.'); return; }
+    data = await apiCall('addWatchedMovie', { title: title, rating: rating, notes: notes });
+  } else {
+    data = await apiCall('addMovie', { title: title, notes: notes });
+  }
+  state.movies = data.movies;
+  closeModal();
+  render();
+}
+
+function openMarkWatchedModal(id) {
+  const m = state.movies.find(function (x) { return x.id === id; });
+  if (!m) return;
+  openModal('' +
+    '<h3>Mark "' + escapeHtml(m.title) + '" as Watched</h3>' +
+    '<label>Rating (0–10)</label>' +
+    '<input type="number" id="mw-rating" min="0" max="10" step="0.01" placeholder="e.g. 8.75">' +
+    '<label>Notes (optional)</label>' +
+    '<textarea id="mw-notes" rows="3" placeholder="Optional notes"></textarea>' +
+    '<div class="modal-actions">' +
+      '<button class="btn" onclick="closeModal()">Cancel</button>' +
+      '<button class="btn btn-primary" onclick="submitMarkWatched(\'' + id + '\')">Save</button>' +
+    '</div>'
+  );
+}
+
+async function submitMarkWatched(id) {
+  const rating = document.getElementById('mw-rating').value;
+  if (rating === '') { alert('Rating is required.'); return; }
+  const notes = document.getElementById('mw-notes').value.trim();
+  const data = await apiCall('markWatched', { id: id, rating: rating, notes: notes });
+  state.movies = data.movies;
+  closeModal();
+  render();
+}
+
+function openEditMovieModal(id) {
+  const m = state.movies.find(function (x) { return x.id === id; });
+  if (!m) return;
+  openModal('' +
+    '<h3>Edit Movie</h3>' +
+    '<label>Title</label>' +
+    '<input type="text" id="edit-movie-title" value="' + escapeAttr(m.title) + '">' +
+    (m.status === 'watched' ?
+      '<label>Rating (0–10)</label><input type="number" id="edit-movie-rating" min="0" max="10" step="0.01" value="' + escapeAttr(formatNumber(m.rating)) + '">'
+      : '') +
+    '<label>Notes (optional)</label>' +
+    '<textarea id="edit-movie-notes" rows="3">' + escapeHtml(m.notes || '') + '</textarea>' +
+    '<div class="modal-actions">' +
+      '<button class="btn" onclick="closeModal()">Cancel</button>' +
+      '<button class="btn btn-primary" onclick="submitEditMovie(\'' + id + '\')">Save</button>' +
+    '</div>'
+  );
+}
+
+async function submitEditMovie(id) {
+  const m = state.movies.find(function (x) { return x.id === id; });
+  const title = document.getElementById('edit-movie-title').value.trim();
+  const notes = document.getElementById('edit-movie-notes').value.trim();
+  const ratingEl = document.getElementById('edit-movie-rating');
+  const rating = ratingEl ? ratingEl.value : '';
+  const data = await apiCall('updateMovie', { id: id, title: title, notes: notes, rating: rating, status: m.status });
+  state.movies = data.movies;
+  closeModal();
+  render();
+}
+
+async function confirmDeleteMovie(id) {
+  if (!confirm('Delete this movie?')) return;
+  const data = await apiCall('deleteMovie', { id: id });
+  state.movies = data.movies;
+  render();
+}
+
+// ==================================================================
+// QUOTES
+// ==================================================================
+
+function renderQuotes() {
+  const withDate = state.quotes.filter(function (q) { return q.date && !isNaN(new Date(q.date).getTime()); });
+  const undated = state.quotes.filter(function (q) { return !q.date || isNaN(new Date(q.date).getTime()); });
+  withDate.sort(function (a, b) { return new Date(b.date) - new Date(a.date); });
+
+  return '' +
+    '<div class="screen-head"><h2>Quotes</h2><button class="btn btn-primary" onclick="openAddQuoteModal()">+ Add Quote</button></div>' +
+    '<section class="panel">' +
+      (state.quotes.length === 0 ? emptyState('No quotes yet.') :
+        withDate.map(renderQuoteRow).join('') +
+        (undated.length ? '<div class="group-label">Undated</div>' + undated.map(renderQuoteRow).join('') : '')
+      ) +
+    '</section>';
+}
+
+function renderQuoteRow(q) {
+  const meta = [q.date ? escapeHtml(q.date) : '', q.source ? escapeHtml(q.source) : ''].filter(Boolean).join(' · ');
+  return '' +
+    '<div class="row">' +
+      '<div class="row-main">' +
+        '<div class="quote-text">"' + escapeHtml(q.text) + '"</div>' +
+        (meta ? '<div class="row-meta">' + meta + '</div>' : '') +
+      '</div>' +
+      '<div class="row-actions">' +
+        '<button class="btn btn-sm" onclick="openEditQuoteModal(\'' + q.id + '\')">Edit</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="confirmDeleteQuote(\'' + q.id + '\')">Delete</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function openAddQuoteModal() {
+  openModal(quoteModalHtml());
+}
+function openEditQuoteModal(id) {
+  const q = state.quotes.find(function (x) { return x.id === id; });
+  if (!q) return;
+  openModal(quoteModalHtml(q));
+}
+function quoteModalHtml(q) {
+  q = q || {};
+  return '' +
+    '<h3>' + (q.id ? 'Edit' : 'Add') + ' Quote</h3>' +
+    '<label>Quote text</label>' +
+    '<textarea id="quote-text" rows="3" placeholder="The quote itself">' + escapeHtml(q.text || '') + '</textarea>' +
+    '<label>Date (optional)</label>' +
+    '<input type="text" id="quote-date" value="' + escapeAttr(q.date || '') + '" placeholder="e.g. 6/9/25, or leave blank">' +
+    '<label>Source (optional)</label>' +
+    '<input type="text" id="quote-source" value="' + escapeAttr(q.source || '') + '" placeholder="e.g. a name, or context">' +
+    '<div class="modal-actions">' +
+      '<button class="btn" onclick="closeModal()">Cancel</button>' +
+      '<button class="btn btn-primary" onclick="submitQuote(' + (q.id ? '\'' + q.id + '\'' : 'null') + ')">Save</button>' +
+    '</div>';
+}
+async function submitQuote(id) {
+  const text = document.getElementById('quote-text').value.trim();
+  if (!text) { alert('Quote text is required.'); return; }
+  const date = document.getElementById('quote-date').value.trim();
+  const source = document.getElementById('quote-source').value.trim();
+  let data;
+  if (id) {
+    data = await apiCall('updateQuote', { id: id, text: text, date: date, source: source });
+  } else {
+    data = await apiCall('addQuote', { text: text, date: date, source: source });
+  }
+  state.quotes = data.quotes;
+  closeModal();
+  render();
+}
+async function confirmDeleteQuote(id) {
+  if (!confirm('Delete this quote?')) return;
+  const data = await apiCall('deleteQuote', { id: id });
+  state.quotes = data.quotes;
+  render();
+}
+
+// ==================================================================
+// RECIPES
+// ==================================================================
+
+function renderRecipes() {
+  const sorted = state.recipes.slice().sort(function (a, b) {
+    if (state.recipesSort === 'date') return (Number(b.dateAdded) || 0) - (Number(a.dateAdded) || 0);
+    return String(a.name).localeCompare(String(b.name));
+  });
+  return '' +
+    '<div class="screen-head"><h2>Recipes</h2><button class="btn btn-primary" onclick="openAddRecipeModal()">+ Add Recipe</button></div>' +
+    '<section class="panel">' +
+      '<div class="panel-head">' +
+        '<h3>All Recipes <span class="count">' + sorted.length + '</span></h3>' +
+        '<div class="sort-toggle">' +
+          '<button class="chip ' + (state.recipesSort === 'name' ? 'active' : '') + '" onclick="setRecipesSort(\'name\')">Name</button>' +
+          '<button class="chip ' + (state.recipesSort === 'date' ? 'active' : '') + '" onclick="setRecipesSort(\'date\')">Date added</button>' +
+        '</div>' +
+      '</div>' +
+      (sorted.length === 0 ? emptyState('No recipes yet.') : sorted.map(renderRecipeCard).join('')) +
+    '</section>';
+}
+
+function setRecipesSort(mode) { state.recipesSort = mode; render(); }
+
+function renderRecipeCard(r) {
+  const hasContent = r.notes || (r.ingredients && r.ingredients.length) || (r.steps && r.steps.length);
+  return '' +
+    '<div class="recipe-card">' +
+      '<div class="recipe-head">' +
+        '<div>' +
+          '<div class="row-title">' + escapeHtml(r.name) + '</div>' +
+          (r.source ? '<div class="row-meta">' + escapeHtml(r.source) + '</div>' : '') +
+        '</div>' +
+        '<div class="row-actions">' +
+          '<button class="btn btn-sm" onclick="openEditRecipeModal(\'' + r.id + '\')">Edit</button>' +
+          '<button class="btn btn-sm btn-danger" onclick="confirmDeleteRecipe(\'' + r.id + '\')">Delete</button>' +
+        '</div>' +
+      '</div>' +
+      (!hasContent ? '<div class="row-notes empty-note">No details yet — bookmarked to fill in later.</div>' : '') +
+      (r.ingredients && r.ingredients.length ?
+        '<div class="recipe-section"><div class="recipe-section-label">Ingredients</div>' +
+        '<ul class="ingredient-list">' + r.ingredients.map(function (i) { return '<li>' + escapeHtml(i) + '</li>'; }).join('') + '</ul></div>'
+        : '') +
+      (r.steps && r.steps.length ?
+        '<div class="recipe-section"><div class="recipe-section-label">Steps</div>' +
+        '<ol class="step-list">' + r.steps.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol></div>'
+        : '') +
+      (r.notes ?
+        '<div class="recipe-section"><div class="recipe-section-label">Notes</div><div class="row-notes">' + escapeHtml(r.notes) + '</div></div>'
+        : '') +
+    '</div>';
+}
+
+let recipeFormIngredients = [];
+let recipeFormSteps = [];
+let editingRecipeId = null;
+
+function openAddRecipeModal() {
+  editingRecipeId = null;
+  recipeFormIngredients = [];
+  recipeFormSteps = [];
+  openModal(recipeModalHtml());
+}
+function openEditRecipeModal(id) {
+  const r = state.recipes.find(function (x) { return x.id === id; });
+  if (!r) return;
+  editingRecipeId = id;
+  recipeFormIngredients = (r.ingredients || []).slice();
+  recipeFormSteps = (r.steps || []).slice();
+  openModal(recipeModalHtml(r));
+}
+function recipeModalHtml(r) {
+  r = r || {};
+  return '' +
+    '<h3>' + (editingRecipeId ? 'Edit' : 'Add') + ' Recipe</h3>' +
+    '<label>Name</label>' +
+    '<input type="text" id="recipe-name" value="' + escapeAttr(r.name || '') + '" placeholder="Recipe name">' +
+    '<label>Source (optional)</label>' +
+    '<input type="text" id="recipe-source" value="' + escapeAttr(r.source || '') + '" placeholder="e.g. a person, website, chef">' +
+    '<label>Ingredients (optional)</label>' +
+    '<div id="ingredient-rows">' + renderListRows(recipeFormIngredients, 'ingredient') + '</div>' +
+    '<button type="button" class="btn btn-sm" onclick="addListRow(\'ingredient\')">+ Add ingredient</button>' +
+    '<label>Steps (optional)</label>' +
+    '<div id="step-rows">' + renderListRows(recipeFormSteps, 'step') + '</div>' +
+    '<button type="button" class="btn btn-sm" onclick="addListRow(\'step\')">+ Add step</button>' +
+    '<label>Notes (optional)</label>' +
+    '<textarea id="recipe-notes" rows="4" placeholder="Freeform notes">' + escapeHtml(r.notes || '') + '</textarea>' +
+    '<div class="modal-actions">' +
+      '<button class="btn" onclick="closeModal()">Cancel</button>' +
+      '<button class="btn btn-primary" onclick="submitRecipe()">Save</button>' +
+    '</div>';
+}
+function renderListRows(arr, kind) {
+  return arr.map(function (val, i) {
+    return '<div class="list-row">' +
+      '<input type="text" value="' + escapeAttr(val) + '" oninput="updateListRow(\'' + kind + '\', ' + i + ', this.value)">' +
+      '<button type="button" class="icon-btn" onclick="removeListRow(\'' + kind + '\', ' + i + ')">✕</button>' +
+    '</div>';
+  }).join('');
+}
+function getListArr(kind) { return kind === 'ingredient' ? recipeFormIngredients : recipeFormSteps; }
+function updateListRow(kind, i, val) { getListArr(kind)[i] = val; }
+function addListRow(kind) {
+  getListArr(kind).push('');
+  document.getElementById(kind + '-rows').innerHTML = renderListRows(getListArr(kind), kind);
+}
+function removeListRow(kind, i) {
+  getListArr(kind).splice(i, 1);
+  document.getElementById(kind + '-rows').innerHTML = renderListRows(getListArr(kind), kind);
+}
+async function submitRecipe() {
+  const name = document.getElementById('recipe-name').value.trim();
+  if (!name) { alert('Name is required.'); return; }
+  const source = document.getElementById('recipe-source').value.trim();
+  const notes = document.getElementById('recipe-notes').value.trim();
+  const ingredients = recipeFormIngredients.map(function (s) { return s.trim(); }).filter(Boolean);
+  const steps = recipeFormSteps.map(function (s) { return s.trim(); }).filter(Boolean);
+  const params = { name: name, source: source, notes: notes, ingredientsJson: JSON.stringify(ingredients), stepsJson: JSON.stringify(steps) };
+  let data;
+  if (editingRecipeId) {
+    params.id = editingRecipeId;
+    data = await apiCall('updateRecipe', params);
+  } else {
+    data = await apiCall('addRecipe', params);
+  }
+  state.recipes = data.recipes;
+  closeModal();
+  render();
+}
+async function confirmDeleteRecipe(id) {
+  if (!confirm('Delete this recipe?')) return;
+  const data = await apiCall('deleteRecipe', { id: id });
+  state.recipes = data.recipes;
+  render();
+}
+
+// ==================================================================
+// TEMPLATES
+// ==================================================================
+
+function renderTemplates() {
+  return '' +
+    '<div class="screen-head"><h2>Templates</h2><button class="btn btn-primary" onclick="openAddTemplateModal()">+ New Template</button></div>' +
+    '<section class="panel">' +
+      '<div class="panel-head"><h3>Templates <span class="count">' + state.templates.length + '</span></h3></div>' +
+      (state.templates.length === 0 ? emptyState('No templates yet.') : state.templates.map(renderTemplateCard).join('')) +
+    '</section>' +
+    '<section class="panel">' +
+      '<div class="panel-head"><h3>Custom Tabs <span class="count">' + state.customTabs.length + '</span></h3></div>' +
+      (state.customTabs.length === 0 ? emptyState('No custom tabs created yet.') : state.customTabs.map(renderCustomTabAdminRow).join('')) +
+    '</section>';
+}
+
+function fieldTypeLabel(type) {
+  const found = FIELD_TYPES.find(function (t) { return t.value === type; });
+  return found ? found.label : type;
+}
+
+function renderTemplateCard(t) {
+  const summary = (t.fields || []).map(function (f) { return f.label + ' (' + fieldTypeLabel(f.type) + ')'; }).join(', ');
+  return '' +
+    '<div class="row">' +
+      '<div class="row-main">' +
+        '<div class="row-title">' + escapeHtml(t.templateName) + '</div>' +
+        '<div class="row-meta">' + escapeHtml(summary || 'No fields defined') + '</div>' +
+      '</div>' +
+      '<div class="row-actions">' +
+        '<button class="btn btn-sm btn-accent" onclick="openCreateTabModal(\'' + t.id + '\')">Create Tab</button>' +
+        '<button class="btn btn-sm" onclick="openEditTemplateModal(\'' + t.id + '\')">Edit</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="confirmDeleteTemplate(\'' + t.id + '\')">Delete</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function renderCustomTabAdminRow(t) {
+  return '' +
+    '<div class="row">' +
+      '<div class="row-main">' +
+        '<div class="row-title">' + escapeHtml(t.tabName) + '</div>' +
+        '<div class="row-meta">' + (t.fields || []).length + ' field(s)</div>' +
+      '</div>' +
+      '<div class="row-actions">' +
+        '<button class="btn btn-sm" onclick="switchTab(\'' + t.id + '\')">Open</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="confirmDeleteCustomTab(\'' + t.id + '\')">Delete Tab</button>' +
+      '</div>' +
+    '</div>';
+}
+
+let templateFormFields = [];
+let editingTemplateId = null;
+
+function openAddTemplateModal() {
+  editingTemplateId = null;
+  templateFormFields = [];
+  openModal(templateModalHtml());
+}
+function openEditTemplateModal(id) {
+  const t = state.templates.find(function (x) { return x.id === id; });
+  if (!t) return;
+  editingTemplateId = id;
+  templateFormFields = (t.fields || []).map(function (f) {
+    return { label: f.label, type: f.type, optionsText: (f.options || []).join(', ') };
+  });
+  openModal(templateModalHtml(t));
+}
+function templateModalHtml(t) {
+  t = t || {};
+  return '' +
+    '<h3>' + (editingTemplateId ? 'Edit' : 'New') + ' Template</h3>' +
+    '<label>Template Name</label>' +
+    '<input type="text" id="template-name" value="' + escapeAttr(t.templateName || '') + '" placeholder="e.g. Book">' +
+    '<label>Fields</label>' +
+    '<div id="template-field-rows">' + renderTemplateFieldRows() + '</div>' +
+    '<button type="button" class="btn btn-sm" onclick="addTemplateField()">+ Add field</button>' +
+    '<div class="modal-actions">' +
+      '<button class="btn" onclick="closeModal()">Cancel</button>' +
+      '<button class="btn btn-primary" onclick="submitTemplate()">Save</button>' +
+    '</div>';
+}
+function renderTemplateFieldRows() {
+  return templateFormFields.map(function (f, i) {
+    return '<div class="field-row">' +
+      '<input type="text" class="field-label" placeholder="Field label" value="' + escapeAttr(f.label) + '" oninput="templateFormFields[' + i + '].label = this.value">' +
+      '<select onchange="setTemplateFieldType(' + i + ', this.value)">' +
+        FIELD_TYPES.map(function (ft) {
+          return '<option value="' + ft.value + '" ' + (f.type === ft.value ? 'selected' : '') + '>' + ft.label + '</option>';
+        }).join('') +
+      '</select>' +
+      (f.type === 'dropdown' ?
+        '<input type="text" class="field-options" placeholder="Options, comma separated" value="' + escapeAttr(f.optionsText || '') + '" oninput="templateFormFields[' + i + '].optionsText = this.value">'
+        : '') +
+      '<button type="button" class="icon-btn" onclick="removeTemplateField(' + i + ')">✕</button>' +
+    '</div>';
+  }).join('');
+}
+function addTemplateField() {
+  templateFormFields.push({ label: '', type: 'text', optionsText: '' });
+  document.getElementById('template-field-rows').innerHTML = renderTemplateFieldRows();
+}
+function removeTemplateField(i) {
+  templateFormFields.splice(i, 1);
+  document.getElementById('template-field-rows').innerHTML = renderTemplateFieldRows();
+}
+function setTemplateFieldType(i, val) {
+  templateFormFields[i].type = val;
+  document.getElementById('template-field-rows').innerHTML = renderTemplateFieldRows();
+}
+async function submitTemplate() {
+  const templateName = document.getElementById('template-name').value.trim();
+  if (!templateName) { alert('Template name is required.'); return; }
+  const fields = templateFormFields
+    .map(function (f) {
+      return {
+        label: (f.label || '').trim(),
+        type: f.type,
+        options: f.type === 'dropdown' ? (f.optionsText || '').split(',').map(function (o) { return o.trim(); }).filter(Boolean) : undefined
+      };
+    })
+    .filter(function (f) { return f.label; });
+  const fieldsJson = JSON.stringify(fields);
+  let data;
+  if (editingTemplateId) {
+    data = await apiCall('updateTemplate', { id: editingTemplateId, templateName: templateName, fieldsJson: fieldsJson });
+  } else {
+    data = await apiCall('addTemplate', { templateName: templateName, fieldsJson: fieldsJson });
+  }
+  state.templates = data.templates;
+  closeModal();
+  render();
+}
+async function confirmDeleteTemplate(id) {
+  if (!confirm('Delete this template? Tabs already created from it will keep working.')) return;
+  const data = await apiCall('deleteTemplate', { id: id });
+  state.templates = data.templates;
+  render();
+}
+
+let createTabTemplateId = null;
+function openCreateTabModal(templateId) {
+  createTabTemplateId = templateId;
+  openModal('' +
+    '<h3>Create Tab</h3>' +
+    '<label>Tab Name</label>' +
+    '<input type="text" id="new-tab-name" placeholder="e.g. Books">' +
+    '<div class="modal-actions">' +
+      '<button class="btn" onclick="closeModal()">Cancel</button>' +
+      '<button class="btn btn-primary" onclick="submitCreateTab()">Create</button>' +
+    '</div>'
+  );
+}
+async function submitCreateTab() {
+  const tabName = document.getElementById('new-tab-name').value.trim();
+  if (!tabName) { alert('Tab name is required.'); return; }
+  const data = await apiCall('createTabFromTemplate', { templateId: createTabTemplateId, tabName: tabName });
+  state.customTabs = data.customTabs;
+  state.customTabs.forEach(function (t) {
+    if (!(t.id in state.customTabsData)) state.customTabsData[t.id] = [];
+  });
+  closeModal();
+  const created = state.customTabs.reduce(function (best, t) {
+    return (!best || Number(t.order) > Number(best.order)) ? t : best;
+  }, null);
+  if (created) switchTab(created.id); else render();
+}
+
+async function confirmDeleteCustomTab(tabId) {
+  if (!confirm('Delete this entire tab and all its entries? This cannot be undone.')) return;
+  const data = await apiCall('deleteCustomTab', { tabId: tabId });
+  state.customTabs = data.customTabs;
+  delete state.customTabsData[tabId];
+  if (state.activeTab === tabId) state.activeTab = 'movies';
+  render();
+}
+
+// ==================================================================
+// CUSTOM TABS (spawned from templates)
+// ==================================================================
+
+function renderCustomTabScreen(tabId) {
+  const tab = state.customTabs.find(function (t) { return t.id === tabId; });
+  if (!tab) return emptyState('This tab no longer exists.');
+  const entries = state.customTabsData[tabId] || [];
+  return '' +
+    '<div class="screen-head"><h2>' + escapeHtml(tab.tabName) + '</h2><button class="btn btn-primary" onclick="openAddCustomEntryModal(\'' + tabId + '\')">+ Add Entry</button></div>' +
+    '<section class="panel">' +
+      (entries.length === 0 ? emptyState('Nothing added yet.') : entries.map(function (e) { return renderCustomEntryRow(tab, e); }).join('')) +
+    '</section>';
+}
+
+function renderFieldValue(f, v) {
+  if (f.type === 'checkbox') {
+    const on = v === true || v === 'true' || v === 'TRUE' || v === 1 || v === '1';
+    return '<div class="field-value"><span class="field-label-tag">' + escapeHtml(f.label) + '</span>' + (on ? '✓ Done' : '— Not done') + '</div>';
+  }
+  if (v === undefined || v === null || v === '') return '';
+  return '<div class="field-value"><span class="field-label-tag">' + escapeHtml(f.label) + '</span>' + escapeHtml(String(v)) + '</div>';
+}
+
+function renderCustomEntryRow(tab, entry) {
+  const fields = tab.fields || [];
+  const first = fields[0];
+  const rest = fields.slice(1);
+  const firstVal = first ? entry.data[first.label] : '';
+  const restParts = rest.map(function (f) { return renderFieldValue(f, entry.data[f.label]); }).filter(Boolean);
+  return '' +
+    '<div class="row">' +
+      '<div class="row-main">' +
+        (first ? '<div class="row-title">' + escapeHtml(String(firstVal || '(untitled)')) + '</div>' : '') +
+        (restParts.length ? '<div class="row-meta-list">' + restParts.join('') + '</div>' : '') +
+      '</div>' +
+      '<div class="row-actions">' +
+        '<button class="btn btn-sm" onclick="openEditCustomEntryModal(\'' + tab.id + '\', \'' + entry.id + '\')">Edit</button>' +
+        '<button class="btn btn-sm btn-danger" onclick="confirmDeleteCustomEntry(\'' + tab.id + '\', \'' + entry.id + '\')">Delete</button>' +
+      '</div>' +
+    '</div>';
+}
+
+let customEntryFormValues = {};
+let editingCustomEntryId = null;
+let customEntryTabId = null;
+
+function openAddCustomEntryModal(tabId) {
+  const tab = state.customTabs.find(function (t) { return t.id === tabId; });
+  if (!tab) return;
+  customEntryTabId = tabId;
+  editingCustomEntryId = null;
+  customEntryFormValues = {};
+  (tab.fields || []).forEach(function (f) { customEntryFormValues[f.label] = f.type === 'checkbox' ? false : ''; });
+  openModal(customEntryModalHtml(tab));
+}
+function openEditCustomEntryModal(tabId, entryId) {
+  const tab = state.customTabs.find(function (t) { return t.id === tabId; });
+  const entry = (state.customTabsData[tabId] || []).find(function (e) { return e.id === entryId; });
+  if (!tab || !entry) return;
+  customEntryTabId = tabId;
+  editingCustomEntryId = entryId;
+  customEntryFormValues = Object.assign({}, entry.data);
+  openModal(customEntryModalHtml(tab));
+}
+function customEntryModalHtml(tab) {
+  return '' +
+    '<h3>' + (editingCustomEntryId ? 'Edit' : 'Add') + ' ' + escapeHtml(tab.tabName) + ' Entry</h3>' +
+    (tab.fields || []).map(function (f, i) { return renderCustomEntryField(tab, f, i); }).join('') +
+    '<div class="modal-actions">' +
+      '<button class="btn" onclick="closeModal()">Cancel</button>' +
+      '<button class="btn btn-primary" onclick="submitCustomEntry()">Save</button>' +
+    '</div>';
+}
+function setCustomFieldValueByIndex(i, val) {
+  const tab = state.customTabs.find(function (t) { return t.id === customEntryTabId; });
+  if (!tab) return;
+  const label = tab.fields[i].label;
+  customEntryFormValues[label] = val;
+}
+function renderCustomEntryField(tab, f, i) {
+  const val = customEntryFormValues[f.label];
+  const id = 'custom-field-' + i;
+  if (f.type === 'textarea') {
+    return '<label>' + escapeHtml(f.label) + '</label><textarea id="' + id + '" rows="3" oninput="setCustomFieldValueByIndex(' + i + ', this.value)">' + escapeHtml(val || '') + '</textarea>';
+  }
+  if (f.type === 'rating') {
+    return '<label>' + escapeHtml(f.label) + '</label><input type="number" id="' + id + '" min="1" max="10" step="1" value="' + escapeAttr(val || '') + '" oninput="setCustomFieldValueByIndex(' + i + ', this.value)">';
+  }
+  if (f.type === 'date') {
+    return '<label>' + escapeHtml(f.label) + '</label><input type="date" id="' + id + '" value="' + escapeAttr(val || '') + '" oninput="setCustomFieldValueByIndex(' + i + ', this.value)">';
+  }
+  if (f.type === 'checkbox') {
+    const checked = val === true || val === 'true' || val === 'TRUE' || val === 1 || val === '1';
+    return '<label class="checkbox-row"><input type="checkbox" id="' + id + '" ' + (checked ? 'checked' : '') + ' onchange="setCustomFieldValueByIndex(' + i + ', this.checked)"> ' + escapeHtml(f.label) + '</label>';
+  }
+  if (f.type === 'dropdown') {
+    const opts = f.options || [];
+    return '<label>' + escapeHtml(f.label) + '</label><select id="' + id + '" onchange="setCustomFieldValueByIndex(' + i + ', this.value)">' +
+      '<option value="">—</option>' +
+      opts.map(function (o) { return '<option value="' + escapeAttr(o) + '" ' + (val === o ? 'selected' : '') + '>' + escapeHtml(o) + '</option>'; }).join('') +
+      '</select>';
+  }
+  return '<label>' + escapeHtml(f.label) + '</label><input type="text" id="' + id + '" value="' + escapeAttr(val || '') + '" oninput="setCustomFieldValueByIndex(' + i + ', this.value)">';
+}
+async function submitCustomEntry() {
+  const dataJson = JSON.stringify(customEntryFormValues);
+  let data;
+  if (editingCustomEntryId) {
+    data = await apiCall('updateCustomTabEntry', { tabId: customEntryTabId, id: editingCustomEntryId, dataJson: dataJson });
+  } else {
+    data = await apiCall('addCustomTabEntry', { tabId: customEntryTabId, dataJson: dataJson });
+  }
+  state.customTabsData[customEntryTabId] = data.entries;
+  closeModal();
+  render();
+}
+async function confirmDeleteCustomEntry(tabId, id) {
+  if (!confirm('Delete this entry?')) return;
+  const data = await apiCall('deleteCustomTabEntry', { tabId: tabId, id: id });
+  state.customTabsData[tabId] = data.entries;
+  render();
+}
+
+// ---------------- Boot ----------------
+
+if (!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_') === 0) {
+  document.getElementById('content').innerHTML =
+    '<div class="config-warning">Set <code>SCRIPT_URL</code> at the top of this file\'s script to your deployed Apps Script Web App URL (see README).</div>';
+  renderNav();
+} else {
+  loadAll();
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+</script>
+</body>
+</html>
