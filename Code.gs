@@ -78,8 +78,10 @@ function doGet(e) {
 
 // ---------------- Sheet helpers ----------------
 
+let _ssCache = null;
 function ss() {
-  return SpreadsheetApp.getActiveSpreadsheet();
+  if (!_ssCache) _ssCache = SpreadsheetApp.getActiveSpreadsheet();
+  return _ssCache;
 }
 
 function ensureSheet(name, headers) {
@@ -141,7 +143,7 @@ function getAllData() {
   const customTabs = getCustomTabsList();
   const customTabsData = {};
   customTabs.forEach(function (t) {
-    customTabsData[t.id] = getCustomTabData(t.id);
+    customTabsData[t.id] = getCustomTabDataForTab(t);
   });
   return {
     movies: getMovies(),
@@ -396,7 +398,13 @@ function getCustomTabInfo(tabId) {
 }
 
 function getCustomTabData(tabId) {
-  const tab = getCustomTabInfo(tabId);
+  return getCustomTabDataForTab(getCustomTabInfo(tabId));
+}
+
+// Same as getCustomTabData, but takes an already-fetched tab object instead
+// of a tabId, so callers that already have the tab (e.g. getAllData looping
+// over the registry) don't re-read the whole CustomTabs sheet per tab.
+function getCustomTabDataForTab(tab) {
   if (!tab) return [];
   const sheet = ss().getSheetByName(tab.sheetName);
   if (!sheet) return [];

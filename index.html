@@ -328,19 +328,45 @@ function render() {
   else content.innerHTML = renderCustomTabScreen(state.activeTab);
 }
 
+const DATA_CACHE_KEY = 'hubDataCache';
+
+function applyData(data) {
+  state.movies = data.movies || [];
+  state.quotes = data.quotes || [];
+  state.recipes = data.recipes || [];
+  state.templates = data.templates || [];
+  state.customTabs = data.customTabs || [];
+  state.customTabsData = data.customTabsData || {};
+}
+
+function loadCachedData() {
+  try {
+    const raw = localStorage.getItem(DATA_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveCachedData(data) {
+  try {
+    localStorage.setItem(DATA_CACHE_KEY, JSON.stringify(data));
+  } catch (e) {}
+}
+
 async function loadAll() {
   try {
     const data = await apiCall('getAll');
-    state.movies = data.movies || [];
-    state.quotes = data.quotes || [];
-    state.recipes = data.recipes || [];
-    state.templates = data.templates || [];
-    state.customTabs = data.customTabs || [];
-    state.customTabsData = data.customTabsData || {};
+    applyData(data);
+    saveCachedData(data);
   } catch (err) {
-    document.getElementById('content').innerHTML =
-      '<div class="empty">Could not load data — check that SCRIPT_URL is set correctly.<br>' + escapeHtml(err.message || String(err)) + '</div>';
-    renderNav();
+    // If we already have cached data on screen, keep showing it rather than
+    // replacing it with an error just because the background refresh failed.
+    if (!state.loadedFromCache) {
+      document.getElementById('content').innerHTML =
+        '<div class="empty">Could not load data — check that SCRIPT_URL is set correctly.<br>' + escapeHtml(err.message || String(err)) + '</div>';
+      renderNav();
+    }
     return;
   }
   render();
@@ -1046,6 +1072,14 @@ if (!SCRIPT_URL || SCRIPT_URL.indexOf('PASTE_') === 0) {
     '<div class="config-warning">Set <code>SCRIPT_URL</code> at the top of this file\'s script to your deployed Apps Script Web App URL (see README).</div>';
   renderNav();
 } else {
+  // Render instantly from last-known data (if any) while a fresh copy loads
+  // in the background — avoids staring at "Loading…" on every single visit.
+  const cached = loadCachedData();
+  if (cached) {
+    applyData(cached);
+    state.loadedFromCache = true;
+    render();
+  }
   loadAll();
 }
 
