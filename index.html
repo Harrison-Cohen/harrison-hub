@@ -301,6 +301,32 @@ async function apiCall(action, params) {
   return data;
 }
 
+function tempId() {
+  return 'temp-' + Math.random().toString(36).slice(2);
+}
+
+// Applies a local change to `state` and renders it immediately, then fires
+// the matching backend call in the background. On success, `reconcile`
+// swaps the optimistic data for the server's authoritative copy (and the
+// result is cached, same as a normal load). On failure, `revert` undoes the
+// local change so the UI matches what's actually saved.
+async function withOptimisticUpdate(apply, request, reconcile, revert) {
+  apply();
+  render();
+  try {
+    const data = await request();
+    reconcile(data);
+    saveCachedData({
+      movies: state.movies, quotes: state.quotes, recipes: state.recipes,
+      templates: state.templates, customTabs: state.customTabs, customTabsData: state.customTabsData
+    });
+  } catch (err) {
+    revert();
+    alert('Could not save that change, so it was undone: ' + (err.message || String(err)));
+  }
+  render();
+}
+
 // ---------------- Modal ----------------
 
 function openModal(html) {
@@ -487,17 +513,28 @@ async function submitAddMovie() {
   const title = document.getElementById('movie-title').value.trim();
   if (!title) { alert('Title is required.'); return; }
   const notes = document.getElementById('movie-notes').value.trim();
-  let data;
-  if (movieFormTarget === 'watched') {
-    const rating = document.getElementById('movie-rating').value;
+  const target = movieFormTarget;
+  let rating = '';
+  if (target === 'watched') {
+    rating = document.getElementById('movie-rating').value;
     if (rating === '') { alert('Rating is required for a Watched entry.'); return; }
-    data = await apiCall('addWatchedMovie', { title: title, rating: rating, notes: notes });
-  } else {
-    data = await apiCall('addMovie', { title: title, notes: notes });
   }
-  state.movies = data.movies;
   closeModal();
-  render();
+  const prevMovies = state.movies.slice();
+  const optimisticMovie = {
+    id: tempId(), title: title, status: target === 'watched' ? 'watched' : 'towatch',
+    rating: target === 'watched' ? Number(rating) : '', notes: notes, dateAdded: Date.now()
+  };
+  await withOptimisticUpdate(
+    function () { state.movies = prevMovies.concat([optimisticMovie]); },
+    function () {
+      return target === 'watched'
+        ? apiCall('addWatchedMovie', { title: title, rating: rating, notes: notes })
+        : apiCall('addMovie', { title: title, notes: notes });
+    },
+    function (data) { state.movies = data.movies; },
+    function () { state.movies = prevMovies; }
+  );
 }
 
 function openMarkWatchedModal(id) {
@@ -520,10 +557,18 @@ async function submitMarkWatched(id) {
   const rating = document.getElementById('mw-rating').value;
   if (rating === '') { alert('Rating is required.'); return; }
   const notes = document.getElementById('mw-notes').value.trim();
-  const data = await apiCall('markWatched', { id: id, rating: rating, notes: notes });
-  state.movies = data.movies;
   closeModal();
-  render();
+  const prevMovies = state.movies.slice();
+  await withOptimisticUpdate(
+    function () {
+      state.movies = state.movies.map(function (m) {
+        return m.id === id ? Object.assign({}, m, { status: 'watched', rating: Number(rating) || 0, notes: notes || m.notes }) : m;
+      });
+    },
+    function () { return apiCall('markWatched', { id: id, rating: rating, notes: notes }); },
+    function (data) { state.movies = data.movies; },
+    function () { state.movies = prevMovies; }
+  );
 }
 
 function openEditMovieModal(id) {
@@ -551,17 +596,33 @@ async function submitEditMovie(id) {
   const notes = document.getElementById('edit-movie-notes').value.trim();
   const ratingEl = document.getElementById('edit-movie-rating');
   const rating = ratingEl ? ratingEl.value : '';
-  const data = await apiCall('updateMovie', { id: id, title: title, notes: notes, rating: rating, status: m.status });
-  state.movies = data.movies;
   closeModal();
-  render();
+  const prevMovies = state.movies.slice();
+  await withOptimisticUpdate(
+    function () {
+      state.movies = state.movies.map(function (x) {
+        if (x.id !== id) return x;
+        const updated = Object.assign({}, x, { notes: notes });
+        if (title) updated.title = title;
+        if (rating !== '') updated.rating = Number(rating);
+        return updated;
+      });
+    },
+    function () { return apiCall('updateMovie', { id: id, title: title, notes: notes, rating: rating, status: m.status }); },
+    function (data) { state.movies = data.movies; },
+    function () { state.movies = prevMovies; }
+  );
 }
 
 async function confirmDeleteMovie(id) {
   if (!confirm('Delete this movie?')) return;
-  const data = await apiCall('deleteMovie', { id: id });
-  state.movies = data.movies;
-  render();
+  const prevMovies = state.movies.slice();
+  await withOptimisticUpdate(
+    function () { state.movies = state.movies.filter(function (m) { return m.id !== id; }); },
+    function () { return apiCall('deleteMovie', { id: id }); },
+    function (data) { state.movies = data.movies; },
+    function () { state.movies = prevMovies; }
+  );
 }
 
 // ==================================================================
@@ -626,21 +687,37 @@ async function submitQuote(id) {
   if (!text) { alert('Quote text is required.'); return; }
   const date = document.getElementById('quote-date').value.trim();
   const source = document.getElementById('quote-source').value.trim();
-  let data;
-  if (id) {
-    data = await apiCall('updateQuote', { id: id, text: text, date: date, source: source });
-  } else {
-    data = await apiCall('addQuote', { text: text, date: date, source: source });
-  }
-  state.quotes = data.quotes;
   closeModal();
-  render();
+  const prevQuotes = state.quotes.slice();
+  await withOptimisticUpdate(
+    function () {
+      if (id) {
+        state.quotes = state.quotes.map(function (q) {
+          return q.id === id ? Object.assign({}, q, { text: text, date: date, source: source }) : q;
+        });
+      } else {
+        const optimisticQuote = { id: tempId(), text: text, date: date, source: source, dateAdded: Date.now() };
+        state.quotes = prevQuotes.concat([optimisticQuote]);
+      }
+    },
+    function () {
+      return id
+        ? apiCall('updateQuote', { id: id, text: text, date: date, source: source })
+        : apiCall('addQuote', { text: text, date: date, source: source });
+    },
+    function (data) { state.quotes = data.quotes; },
+    function () { state.quotes = prevQuotes; }
+  );
 }
 async function confirmDeleteQuote(id) {
   if (!confirm('Delete this quote?')) return;
-  const data = await apiCall('deleteQuote', { id: id });
-  state.quotes = data.quotes;
-  render();
+  const prevQuotes = state.quotes.slice();
+  await withOptimisticUpdate(
+    function () { state.quotes = state.quotes.filter(function (q) { return q.id !== id; }); },
+    function () { return apiCall('deleteQuote', { id: id }); },
+    function (data) { state.quotes = data.quotes; },
+    function () { state.quotes = prevQuotes; }
+  );
 }
 
 // ==================================================================
@@ -774,22 +851,35 @@ async function submitRecipe() {
   const ingredients = recipeFormIngredients.map(function (s) { return s.trim(); }).filter(Boolean);
   const steps = recipeFormSteps.map(function (s) { return s.trim(); }).filter(Boolean);
   const params = { name: name, source: source, notes: notes, ingredientsJson: JSON.stringify(ingredients), stepsJson: JSON.stringify(steps) };
-  let data;
-  if (editingRecipeId) {
-    params.id = editingRecipeId;
-    data = await apiCall('updateRecipe', params);
-  } else {
-    data = await apiCall('addRecipe', params);
-  }
-  state.recipes = data.recipes;
+  const id = editingRecipeId;
+  if (id) params.id = id;
   closeModal();
-  render();
+  const prevRecipes = state.recipes.slice();
+  await withOptimisticUpdate(
+    function () {
+      if (id) {
+        state.recipes = state.recipes.map(function (r) {
+          return r.id === id ? Object.assign({}, r, { name: name, source: source, notes: notes, ingredients: ingredients, steps: steps }) : r;
+        });
+      } else {
+        const optimisticRecipe = { id: tempId(), name: name, source: source, notes: notes, ingredients: ingredients, steps: steps, dateAdded: Date.now() };
+        state.recipes = prevRecipes.concat([optimisticRecipe]);
+      }
+    },
+    function () { return id ? apiCall('updateRecipe', params) : apiCall('addRecipe', params); },
+    function (data) { state.recipes = data.recipes; },
+    function () { state.recipes = prevRecipes; }
+  );
 }
 async function confirmDeleteRecipe(id) {
   if (!confirm('Delete this recipe?')) return;
-  const data = await apiCall('deleteRecipe', { id: id });
-  state.recipes = data.recipes;
-  render();
+  const prevRecipes = state.recipes.slice();
+  await withOptimisticUpdate(
+    function () { state.recipes = state.recipes.filter(function (r) { return r.id !== id; }); },
+    function () { return apiCall('deleteRecipe', { id: id }); },
+    function (data) { state.recipes = data.recipes; },
+    function () { state.recipes = prevRecipes; }
+  );
 }
 
 // ==================================================================
@@ -916,21 +1006,38 @@ async function submitTemplate() {
     })
     .filter(function (f) { return f.label; });
   const fieldsJson = JSON.stringify(fields);
-  let data;
-  if (editingTemplateId) {
-    data = await apiCall('updateTemplate', { id: editingTemplateId, templateName: templateName, fieldsJson: fieldsJson });
-  } else {
-    data = await apiCall('addTemplate', { templateName: templateName, fieldsJson: fieldsJson });
-  }
-  state.templates = data.templates;
+  const id = editingTemplateId;
   closeModal();
-  render();
+  const prevTemplates = state.templates.slice();
+  await withOptimisticUpdate(
+    function () {
+      if (id) {
+        state.templates = state.templates.map(function (t) {
+          return t.id === id ? Object.assign({}, t, { templateName: templateName, fields: fields }) : t;
+        });
+      } else {
+        const optimisticTemplate = { id: tempId(), templateName: templateName, fields: fields };
+        state.templates = prevTemplates.concat([optimisticTemplate]);
+      }
+    },
+    function () {
+      return id
+        ? apiCall('updateTemplate', { id: id, templateName: templateName, fieldsJson: fieldsJson })
+        : apiCall('addTemplate', { templateName: templateName, fieldsJson: fieldsJson });
+    },
+    function (data) { state.templates = data.templates; },
+    function () { state.templates = prevTemplates; }
+  );
 }
 async function confirmDeleteTemplate(id) {
   if (!confirm('Delete this template? Tabs already created from it will keep working.')) return;
-  const data = await apiCall('deleteTemplate', { id: id });
-  state.templates = data.templates;
-  render();
+  const prevTemplates = state.templates.slice();
+  await withOptimisticUpdate(
+    function () { state.templates = state.templates.filter(function (t) { return t.id !== id; }); },
+    function () { return apiCall('deleteTemplate', { id: id }); },
+    function (data) { state.templates = data.templates; },
+    function () { state.templates = prevTemplates; }
+  );
 }
 
 let createTabTemplateId = null;
@@ -963,11 +1070,23 @@ async function submitCreateTab() {
 
 async function confirmDeleteCustomTab(tabId) {
   if (!confirm('Delete this entire tab and all its entries? This cannot be undone.')) return;
-  const data = await apiCall('deleteCustomTab', { tabId: tabId });
-  state.customTabs = data.customTabs;
-  delete state.customTabsData[tabId];
-  if (state.activeTab === tabId) state.activeTab = 'movies';
-  render();
+  const prevTabs = state.customTabs.slice();
+  const prevEntries = state.customTabsData[tabId];
+  const wasActive = state.activeTab === tabId;
+  await withOptimisticUpdate(
+    function () {
+      state.customTabs = state.customTabs.filter(function (t) { return t.id !== tabId; });
+      delete state.customTabsData[tabId];
+      if (wasActive) state.activeTab = 'movies';
+    },
+    function () { return apiCall('deleteCustomTab', { tabId: tabId }); },
+    function (data) { state.customTabs = data.customTabs; },
+    function () {
+      state.customTabs = prevTabs;
+      state.customTabsData[tabId] = prevEntries;
+      if (wasActive) state.activeTab = tabId;
+    }
+  );
 }
 
 // ==================================================================
@@ -1076,22 +1195,41 @@ function renderCustomEntryField(tab, f, i) {
   return '<label>' + escapeHtml(f.label) + '</label><input type="text" id="' + id + '" value="' + escapeAttr(val || '') + '" oninput="setCustomFieldValueByIndex(' + i + ', this.value)">';
 }
 async function submitCustomEntry() {
-  const dataJson = JSON.stringify(customEntryFormValues);
-  let data;
-  if (editingCustomEntryId) {
-    data = await apiCall('updateCustomTabEntry', { tabId: customEntryTabId, id: editingCustomEntryId, dataJson: dataJson });
-  } else {
-    data = await apiCall('addCustomTabEntry', { tabId: customEntryTabId, dataJson: dataJson });
-  }
-  state.customTabsData[customEntryTabId] = data.entries;
+  const tabId = customEntryTabId;
+  const id = editingCustomEntryId;
+  const values = Object.assign({}, customEntryFormValues);
+  const dataJson = JSON.stringify(values);
   closeModal();
-  render();
+  const prevEntries = (state.customTabsData[tabId] || []).slice();
+  await withOptimisticUpdate(
+    function () {
+      if (id) {
+        state.customTabsData[tabId] = prevEntries.map(function (e) {
+          return e.id === id ? Object.assign({}, e, { data: values }) : e;
+        });
+      } else {
+        const optimisticEntry = { id: tempId(), dateAdded: Date.now(), data: values };
+        state.customTabsData[tabId] = prevEntries.concat([optimisticEntry]);
+      }
+    },
+    function () {
+      return id
+        ? apiCall('updateCustomTabEntry', { tabId: tabId, id: id, dataJson: dataJson })
+        : apiCall('addCustomTabEntry', { tabId: tabId, dataJson: dataJson });
+    },
+    function (data) { state.customTabsData[tabId] = data.entries; },
+    function () { state.customTabsData[tabId] = prevEntries; }
+  );
 }
 async function confirmDeleteCustomEntry(tabId, id) {
   if (!confirm('Delete this entry?')) return;
-  const data = await apiCall('deleteCustomTabEntry', { tabId: tabId, id: id });
-  state.customTabsData[tabId] = data.entries;
-  render();
+  const prevEntries = (state.customTabsData[tabId] || []).slice();
+  await withOptimisticUpdate(
+    function () { state.customTabsData[tabId] = prevEntries.filter(function (e) { return e.id !== id; }); },
+    function () { return apiCall('deleteCustomTabEntry', { tabId: tabId, id: id }); },
+    function (data) { state.customTabsData[tabId] = data.entries; },
+    function () { state.customTabsData[tabId] = prevEntries; }
+  );
 }
 
 // ---------------- Boot ----------------
