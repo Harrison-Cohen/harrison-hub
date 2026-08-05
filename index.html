@@ -145,10 +145,24 @@
   .recipe-card { padding: 16px 0; border-bottom: 1px solid var(--border); }
   .recipe-card:last-child { border-bottom: none; }
   .recipe-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
+  .recipe-head-toggle { cursor: pointer; }
+  .recipe-head-main { display: flex; align-items: flex-start; gap: 10px; min-width: 0; }
+  .fold-caret {
+    display: inline-block; flex-shrink: 0; margin-top: 7px; width: 0; height: 0;
+    border-style: solid; border-width: 4px 0 4px 6px;
+    border-color: transparent transparent transparent var(--text-soft);
+    transition: transform .15s ease;
+  }
+  .fold-caret.open { transform: rotate(90deg); }
   .recipe-section { margin-top: 10px; }
   .recipe-section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-faint); margin-bottom: 4px; }
   .ingredient-list, .step-list { margin: 0; padding-left: 20px; font-size: 13px; color: var(--text-soft); }
   .ingredient-list li, .step-list li { margin-bottom: 3px; }
+
+  .movies-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 700px) {
+    .movies-grid { grid-template-columns: 1fr; }
+  }
 
   .config-warning {
     background: rgba(185,105,95,0.1); border: 1px solid rgba(185,105,95,0.3); color: #d99a92;
@@ -243,7 +257,8 @@ const state = {
   movies: [], quotes: [], recipes: [], templates: [], customTabs: [], customTabsData: {},
   activeTab: 'movies',
   moviesSort: 'rating',
-  recipesSort: 'name'
+  recipesSort: 'name',
+  expandedRecipes: new Set()
 };
 
 // ---------------- Utilities ----------------
@@ -386,20 +401,22 @@ function renderMovies() {
 
   return '' +
     '<div class="screen-head"><h2>Movies</h2><button class="btn btn-primary" onclick="openAddMovieModal()">+ Add Movie</button></div>' +
-    '<section class="panel">' +
-      '<div class="panel-head"><h3>To Watch <span class="count">' + toWatch.length + '</span></h3></div>' +
-      (toWatch.length === 0 ? emptyState('Nothing queued up yet.') : toWatch.map(renderToWatchRow).join('')) +
-    '</section>' +
-    '<section class="panel">' +
-      '<div class="panel-head">' +
-        '<h3>Watched <span class="count">' + watched.length + '</span></h3>' +
-        '<div class="sort-toggle">' +
-          '<button class="chip ' + (state.moviesSort === 'rating' ? 'active' : '') + '" onclick="setMoviesSort(\'rating\')">Rating</button>' +
-          '<button class="chip ' + (state.moviesSort === 'date' ? 'active' : '') + '" onclick="setMoviesSort(\'date\')">Date added</button>' +
+    '<div class="movies-grid">' +
+      '<section class="panel">' +
+        '<div class="panel-head"><h3>To Watch <span class="count">' + toWatch.length + '</span></h3></div>' +
+        (toWatch.length === 0 ? emptyState('Nothing queued up yet.') : toWatch.map(renderToWatchRow).join('')) +
+      '</section>' +
+      '<section class="panel">' +
+        '<div class="panel-head">' +
+          '<h3>Watched <span class="count">' + watched.length + '</span></h3>' +
+          '<div class="sort-toggle">' +
+            '<button class="chip ' + (state.moviesSort === 'rating' ? 'active' : '') + '" onclick="setMoviesSort(\'rating\')">Rating</button>' +
+            '<button class="chip ' + (state.moviesSort === 'date' ? 'active' : '') + '" onclick="setMoviesSort(\'date\')">Date added</button>' +
+          '</div>' +
         '</div>' +
-      '</div>' +
-      (sorted.length === 0 ? emptyState('Nothing watched yet.') : sorted.map(renderWatchedRow).join('')) +
-    '</section>';
+        (sorted.length === 0 ? emptyState('Nothing watched yet.') : sorted.map(renderWatchedRow).join('')) +
+      '</section>' +
+    '</div>';
 }
 
 function setMoviesSort(mode) { state.moviesSort = mode; render(); }
@@ -651,32 +668,44 @@ function renderRecipes() {
 
 function setRecipesSort(mode) { state.recipesSort = mode; render(); }
 
+function toggleRecipe(id) {
+  if (state.expandedRecipes.has(id)) state.expandedRecipes.delete(id);
+  else state.expandedRecipes.add(id);
+  render();
+}
+
 function renderRecipeCard(r) {
+  const isOpen = state.expandedRecipes.has(r.id);
   const hasContent = r.notes || (r.ingredients && r.ingredients.length) || (r.steps && r.steps.length);
   return '' +
     '<div class="recipe-card">' +
-      '<div class="recipe-head">' +
-        '<div>' +
-          '<div class="row-title">' + escapeHtml(r.name) + '</div>' +
-          (r.source ? '<div class="row-meta">' + escapeHtml(r.source) + '</div>' : '') +
+      '<div class="recipe-head recipe-head-toggle" onclick="toggleRecipe(\'' + r.id + '\')">' +
+        '<div class="recipe-head-main">' +
+          '<span class="fold-caret ' + (isOpen ? 'open' : '') + '"></span>' +
+          '<div>' +
+            '<div class="row-title">' + escapeHtml(r.name) + '</div>' +
+            (r.source ? '<div class="row-meta">' + escapeHtml(r.source) + '</div>' : '') +
+          '</div>' +
         '</div>' +
-        '<div class="row-actions">' +
+        '<div class="row-actions" onclick="event.stopPropagation()">' +
           '<button class="btn btn-sm" onclick="openEditRecipeModal(\'' + r.id + '\')">Edit</button>' +
           '<button class="btn btn-sm btn-danger" onclick="confirmDeleteRecipe(\'' + r.id + '\')">Delete</button>' +
         '</div>' +
       '</div>' +
-      (!hasContent ? '<div class="row-notes empty-note">No details yet — bookmarked to fill in later.</div>' : '') +
-      (r.ingredients && r.ingredients.length ?
-        '<div class="recipe-section"><div class="recipe-section-label">Ingredients</div>' +
-        '<ul class="ingredient-list">' + r.ingredients.map(function (i) { return '<li>' + escapeHtml(i) + '</li>'; }).join('') + '</ul></div>'
-        : '') +
-      (r.steps && r.steps.length ?
-        '<div class="recipe-section"><div class="recipe-section-label">Steps</div>' +
-        '<ol class="step-list">' + r.steps.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol></div>'
-        : '') +
-      (r.notes ?
-        '<div class="recipe-section"><div class="recipe-section-label">Notes</div><div class="row-notes">' + escapeHtml(r.notes) + '</div></div>'
-        : '') +
+      (!isOpen ? '' :
+        (!hasContent ? '<div class="row-notes empty-note">No details yet — bookmarked to fill in later.</div>' : '') +
+        (r.ingredients && r.ingredients.length ?
+          '<div class="recipe-section"><div class="recipe-section-label">Ingredients</div>' +
+          '<ul class="ingredient-list">' + r.ingredients.map(function (i) { return '<li>' + escapeHtml(i) + '</li>'; }).join('') + '</ul></div>'
+          : '') +
+        (r.steps && r.steps.length ?
+          '<div class="recipe-section"><div class="recipe-section-label">Steps</div>' +
+          '<ol class="step-list">' + r.steps.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol></div>'
+          : '') +
+        (r.notes ?
+          '<div class="recipe-section"><div class="recipe-section-label">Notes</div><div class="row-notes">' + escapeHtml(r.notes) + '</div></div>'
+          : '')
+      ) +
     '</div>';
 }
 
