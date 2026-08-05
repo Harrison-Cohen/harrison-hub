@@ -1,23 +1,48 @@
 # Harrison's Hub
 
-A personal, installable web app (PWA) for tracking Movies, Quotes, and Recipes,
-plus a Templates system for creating new custom tabs on the fly. No login —
-it's just yours, synced across every device through a Google Sheet.
+A personal, installable web app (PWA) that replaces a pile of notes apps and
+spreadsheets with one home for the things Harrison wants to keep track of —
+movies, quotes, recipes, and anything else he dreams up later. No accounts,
+no login — it's just his, and it stays in sync across every device
+automatically.
 
-## How it works
+## What it is
+
+Harrison's Hub is a single-page app with four built-in sections, plus a way
+to spin up new ones on demand:
+
+- **Movies** — a "To Watch" queue and a "Watched" list (0–10 ratings, notes),
+  shown side-by-side so nothing gets lost scrolling.
+- **Quotes** — a running collection of quotes worth remembering, each with
+  an optional date and source.
+- **Recipes** — ingredients, steps, and notes per recipe, collapsed into
+  foldable cards so a long recipe list stays easy to scan.
+- **Templates** — define a custom data shape once (fields like text,
+  ratings, dates, checkboxes, dropdowns), then spin up as many tabs from it
+  as you want — e.g. a "Books" tab or a "Wishlist" tab — each backed by its
+  own sheet of data.
+
+Every tab, built-in or custom, can be given its own accent color from the
+Templates screen, so the app can be color-coded to taste. Add/edit/delete
+actions update the screen instantly and sync to the backend in the
+background, so it feels responsive even though the data lives in a Google
+Sheet.
+
+Everything is backed by a single Google Sheet, so opening the Sheet
+directly lets you eyeball or bulk-edit the raw data any time, and every
+device that loads the app talks to the same backend — no manual
+export/import between phone and desktop.
+
+## How it's built
 
 - **Frontend**: a static PWA (`index.html` + `manifest.json` + `sw.js`),
-  hosted for free on GitHub Pages.
+  installable to a phone home screen, hosted for free on GitHub Pages.
 - **Backend**: a single Google Apps Script Web App (`Code.gs`), deployed at
   script.google.com, exposing a JSON API via `doGet(e)` with an `action`
   query param.
 - **Storage**: a Google Sheet bound to the Apps Script, with one sheet/tab
-  per data category (Movies, Quotes, Recipes, Templates, CustomTabs, plus
-  one sheet per custom tab you create).
-
-Every device that loads `index.html` talks to the same Apps Script URL, so
-data stays in sync automatically — no manual export/import between phone
-and desktop.
+  per data category (Movies, Quotes, Recipes, Templates, CustomTabs,
+  TabColors, plus one sheet per custom tab you create).
 
 ## Setup
 
@@ -89,6 +114,7 @@ The `/exec` URL stays the same across versions, so `SCRIPT_URL` in
 | `Recipes` | id, name, notes, ingredients (JSON array), steps (JSON array), source, dateAdded |
 | `Templates` | id, templateName, fieldsJson (JSON array of `{label, type, options?}`) |
 | `CustomTabs` | id, tabName, templateId, sheetName, fieldsJson, order, dateAdded — the registry of tabs spawned from templates |
+| `TabColors` | tabId, color — the accent color chosen for a tab (built-in id like `movies`, or a custom tab's id) |
 | one sheet per custom tab | id, dateAdded, then one column per field defined in that tab's template |
 
 All sheets are created automatically the first time they're needed —
