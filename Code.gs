@@ -66,6 +66,9 @@ function doGet(e) {
     } else if (action === 'deleteCustomTabEntry') {
       result = { entries: deleteCustomTabEntry(e.parameter.tabId, e.parameter.id) };
 
+    } else if (action === 'setTabColor') {
+      result = { tabColors: setTabColor(e.parameter.tabId, e.parameter.color) };
+
     } else {
       result = { error: 'unknown action: ' + action };
     }
@@ -151,8 +154,39 @@ function getAllData() {
     recipes: getRecipes(),
     templates: getTemplates(),
     customTabs: customTabs,
-    customTabsData: customTabsData
+    customTabsData: customTabsData,
+    tabColors: getTabColorsMap()
   };
+}
+
+// ---------------- Tab colors ----------------
+// One row per tab (built-in tab id like "movies", or a custom tab's id),
+// so color choices sync across every device via the Sheet, same as
+// everything else.
+
+const TAB_COLORS_HEADERS = ['tabId', 'color'];
+
+function tabColorsSheet() {
+  return ensureSheet('TabColors', TAB_COLORS_HEADERS);
+}
+
+function getTabColorsMap() {
+  const rows = sheetToObjects(tabColorsSheet());
+  const map = {};
+  rows.forEach(function (r) { map[r.tabId] = r.color; });
+  return map;
+}
+
+function setTabColor(tabId, color) {
+  if (!tabId) return getTabColorsMap();
+  const sheet = tabColorsSheet();
+  const rowIdx = findRowIndexById(sheet, tabId);
+  if (rowIdx !== -1) {
+    sheet.getRange(rowIdx, 2).setValue(color || '');
+  } else {
+    sheet.appendRow([tabId, color || '']);
+  }
+  return getTabColorsMap();
 }
 
 // ---------------- Movies ----------------

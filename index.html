@@ -11,43 +11,65 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: dark;
-    --bg: #121214;
-    --bg2: #17181b;
-    --card: #1e1f23;
-    --border: #2a2b30;
-    --text: #e8e8ea;
-    --text-soft: #9a9ba1;
-    --text-faint: #6d6e75;
-    --accent: #5b7c99;
-    --accent-dark: #4a6780;
-    --accent-soft: rgba(91, 124, 153, 0.16);
-    --red: #b9695f;
-    --red-soft: rgba(185, 105, 95, 0.14);
-    --green: #6f9a7c;
+    --bg: #100f1a;
+    --bg2: #181829;
+    --card: #1e1e33;
+    --border: #34334f;
+    --text: #f3f2f9;
+    --text-soft: #c7c5db;
+    --text-faint: #9a96ba;
+    --accent: #8b5cf6;
+    --accent2: #ec4899;
+    --accent-dark: #7c3aed;
+    --accent-soft: rgba(139, 92, 246, 0.18);
+    --red: #f43f5e;
+    --red-soft: rgba(244, 63, 94, 0.14);
+    --green: #22c55e;
+    --gold: #fbbf24;
+    --shadow: 0 2px 12px rgba(0,0,0,0.35);
+    --font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: var(--bg);
+    background:
+      radial-gradient(circle at 12% -10%, rgba(139,92,246,0.20), transparent 45%),
+      radial-gradient(circle at 88% 0%, rgba(236,72,153,0.14), transparent 40%),
+      var(--bg);
     color: var(--text);
     -webkit-font-smoothing: antialiased;
     line-height: 1.5;
   }
 
   .topbar {
-    background: var(--bg2);
+    background: linear-gradient(180deg, var(--bg2), rgba(24,24,41,0.6));
     border-bottom: 1px solid var(--border);
     position: sticky;
     top: 0;
     z-index: 10;
     padding-top: env(safe-area-inset-top);
+    backdrop-filter: blur(6px);
   }
   .topbar-inner { max-width: 880px; margin: 0 auto; padding: 18px 20px 0; }
-  .brand { margin: 0 0 14px; font-size: 20px; font-weight: 700; letter-spacing: -0.2px; color: var(--text); }
+  .brand-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 16px; }
+  .logo-badge {
+    flex-shrink: 0; width: 42px; height: 42px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Pacifico', cursive; font-size: 20px; color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 4px 14px rgba(139,92,246,0.45);
+  }
+  .brand {
+    margin: 0; font-family: var(--font-heading); font-size: 27px; font-weight: 800;
+    letter-spacing: -0.3px; color: var(--text);
+  }
   .tabs {
     display: flex;
     gap: 6px;
@@ -61,6 +83,7 @@
     background: transparent;
     border: 1px solid transparent;
     color: var(--text-soft);
+    font-family: var(--font-heading);
     font-size: 13.5px;
     font-weight: 600;
     padding: 8px 14px;
@@ -69,8 +92,7 @@
     transition: background .12s ease, color .12s ease;
     white-space: nowrap;
   }
-  .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
-  .tab-btn.active { background: var(--accent-soft); color: var(--accent); border-color: rgba(91,124,153,0.3); }
+  .tab-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
 
   .content { max-width: 880px; margin: 0 auto; padding: 24px 20px 80px; }
 
@@ -78,21 +100,27 @@
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 18px; gap: 12px; flex-wrap: wrap;
   }
-  .screen-head h2 { margin: 0; font-size: 22px; font-weight: 700; }
+  .screen-head h2 { margin: 0; font-family: var(--font-heading); font-size: 23px; font-weight: 800; }
 
   .panel {
     background: var(--card);
     border: 1px solid var(--border);
+    border-top: 3px solid var(--tab-accent, var(--accent));
     border-radius: 12px;
     padding: 18px 20px;
     margin-bottom: 18px;
+    box-shadow: var(--shadow);
   }
   .panel-head {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 10px; gap: 10px; flex-wrap: wrap;
   }
-  .panel-head h3 { margin: 0; font-size: 14.5px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
-  .count { font-size: 11.5px; font-weight: 700; color: var(--text-faint); background: rgba(255,255,255,0.04); padding: 1px 8px; border-radius: 999px; }
+  .panel-head h3 { margin: 0; font-family: var(--font-heading); font-size: 15px; font-weight: 700; color: var(--text); display: flex; align-items: center; gap: 8px; }
+  .count {
+    font-size: 11.5px; font-weight: 700; color: var(--tab-accent, var(--accent));
+    background: color-mix(in srgb, var(--tab-accent, var(--accent)) 18%, transparent);
+    padding: 1px 8px; border-radius: 999px;
+  }
 
   .sort-toggle { display: flex; gap: 6px; }
   .chip {
@@ -101,7 +129,11 @@
     transition: all .12s ease;
   }
   .chip:hover { color: var(--text); }
-  .chip.active { background: var(--accent-soft); color: var(--accent); border-color: rgba(91,124,153,0.35); }
+  .chip.active {
+    background: color-mix(in srgb, var(--tab-accent, var(--accent)) 20%, transparent);
+    color: var(--tab-accent, var(--accent));
+    border-color: color-mix(in srgb, var(--tab-accent, var(--accent)) 45%, transparent);
+  }
 
   .row {
     display: flex; align-items: flex-start; justify-content: space-between; gap: 14px;
@@ -109,14 +141,18 @@
   }
   .row:last-child { border-bottom: none; }
   .row-main { flex: 1; min-width: 0; }
-  .row-title { font-size: 14.5px; font-weight: 600; color: var(--text); }
+  .row-title { font-size: 15px; font-weight: 700; color: var(--text); }
   .row-notes { font-size: 13px; color: var(--text-soft); margin-top: 4px; white-space: pre-wrap; }
   .row-notes.empty-note { font-style: italic; color: var(--text-faint); }
-  .row-meta { font-size: 12px; color: var(--text-faint); margin-top: 4px; }
-  .row-meta-list { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 6px; }
+  .row-meta { font-size: 12.5px; color: var(--text-faint); margin-top: 4px; }
+  .row-meta-list { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-top: 6px; }
   .field-value { font-size: 12.5px; color: var(--text-soft); }
-  .field-label-tag { color: var(--text-faint); font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; margin-right: 4px; }
-  .rating-badge { font-size: 12px; color: var(--text-faint); font-weight: 600; margin-top: 4px; }
+  .field-label-tag {
+    color: var(--tab-accent, var(--accent)); background: color-mix(in srgb, var(--tab-accent, var(--accent)) 16%, transparent);
+    font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;
+    padding: 1px 6px; border-radius: 6px; margin-right: 4px;
+  }
+  .rating-badge { font-size: 12.5px; color: var(--gold); font-weight: 700; margin-top: 4px; }
 
   .row-actions { display: flex; gap: 6px; flex-shrink: 0; flex-wrap: wrap; justify-content: flex-end; }
 
@@ -125,14 +161,22 @@
     border-radius: 8px; padding: 8px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
     transition: all .12s ease; font-family: inherit;
   }
-  .btn:hover { color: var(--text); border-color: #3a3b42; }
+  .btn:hover { color: var(--text); border-color: #46456a; }
   .btn-sm { padding: 6px 11px; font-size: 12px; }
-  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn-primary:hover { background: var(--accent-dark); color: #fff; }
-  .btn-accent { color: var(--accent); border-color: rgba(91,124,153,0.4); }
-  .btn-accent:hover { background: var(--accent-soft); color: var(--accent); }
-  .btn-danger { color: var(--red); border-color: rgba(185,105,95,0.3); }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--tab-accent, var(--accent)), color-mix(in srgb, var(--tab-accent, var(--accent)) 65%, var(--accent2)));
+    color: #fff; border-color: transparent; box-shadow: 0 2px 10px color-mix(in srgb, var(--tab-accent, var(--accent)) 35%, transparent);
+  }
+  .btn-primary:hover { filter: brightness(1.08); }
+  .btn-accent { color: var(--tab-accent, var(--accent)); border-color: color-mix(in srgb, var(--tab-accent, var(--accent)) 45%, transparent); }
+  .btn-accent:hover { background: color-mix(in srgb, var(--tab-accent, var(--accent)) 16%, transparent); color: var(--tab-accent, var(--accent)); }
+  .btn-danger { color: var(--red); border-color: rgba(244,63,94,0.35); }
   .btn-danger:hover { background: var(--red-soft); color: var(--red); }
+
+  .color-swatch {
+    width: 40px; height: 34px; border: 1px solid var(--border); border-radius: 8px;
+    cursor: pointer; background: transparent; padding: 2px;
+  }
 
   .empty { color: var(--text-faint); font-size: 13px; padding: 20px 4px; text-align: center; }
   .loading { color: var(--text-faint); font-size: 13px; padding: 40px 4px; text-align: center; }
@@ -165,14 +209,14 @@
   }
 
   .config-warning {
-    background: rgba(185,105,95,0.1); border: 1px solid rgba(185,105,95,0.3); color: #d99a92;
+    background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.3); color: #f4a1ac;
     border-radius: 10px; padding: 12px 14px; font-size: 13px; margin-bottom: 18px;
   }
-  .config-warning code { background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; }
+  .config-warning code { background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 4px; }
 
   /* ---------- Modal ---------- */
   .modal-overlay {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
     display: flex; align-items: flex-start; justify-content: center;
     padding: 40px 16px; overflow-y: auto; z-index: 100;
   }
@@ -180,8 +224,9 @@
     background: var(--card); border: 1px solid var(--border); border-radius: 14px;
     padding: 22px 24px 24px; width: 100%; max-width: 440px;
     display: flex; flex-direction: column; gap: 4px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5);
   }
-  .modal-box h3 { margin: 0 0 10px; font-size: 17px; font-weight: 700; }
+  .modal-box h3 { margin: 0 0 10px; font-family: var(--font-heading); font-size: 18px; font-weight: 700; }
   .modal-box label { font-size: 12px; font-weight: 600; color: var(--text-soft); margin: 10px 0 4px; }
   .modal-box input[type="text"],
   .modal-box input[type="number"],
@@ -192,7 +237,7 @@
     border-radius: 8px; padding: 10px 12px; font-size: 14px; font-family: inherit; outline: none;
     transition: border-color .12s ease;
   }
-  .modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus { border-color: var(--accent); }
+  .modal-box input:focus, .modal-box select:focus, .modal-box textarea:focus { border-color: var(--tab-accent, var(--accent)); }
   .modal-box textarea { resize: vertical; min-height: 60px; }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
   .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13.5px; color: var(--text); font-weight: 500; }
@@ -203,7 +248,10 @@
     flex: 1; background: transparent; border: none; color: var(--text-soft); font-size: 12.5px;
     font-weight: 600; padding: 9px 0; cursor: pointer; font-family: inherit;
   }
-  .seg-btn.active { background: var(--accent-soft); color: var(--accent); }
+  .seg-btn.active {
+    background: color-mix(in srgb, var(--tab-accent, var(--accent)) 20%, transparent);
+    color: var(--tab-accent, var(--accent));
+  }
 
   .list-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
   .list-row input { flex: 1; }
@@ -229,7 +277,10 @@
 
 <header class="topbar">
   <div class="topbar-inner">
-    <h1 class="brand">Harrison's Hub</h1>
+    <div class="brand-row">
+      <span class="logo-badge">H</span>
+      <h1 class="brand">Harrison's Hub</h1>
+    </div>
     <nav class="tabs" id="tabs"></nav>
   </div>
 </header>
@@ -253,13 +304,19 @@ const FIELD_TYPES = [
   { value: 'dropdown', label: 'Dropdown' }
 ];
 
+const DEFAULT_TAB_COLOR = '#8b5cf6';
+
 const state = {
-  movies: [], quotes: [], recipes: [], templates: [], customTabs: [], customTabsData: {},
+  movies: [], quotes: [], recipes: [], templates: [], customTabs: [], customTabsData: {}, tabColors: {},
   activeTab: 'movies',
   moviesSort: 'rating',
   recipesSort: 'name',
   expandedRecipes: new Set()
 };
+
+function getTabColor(tabId) {
+  return state.tabColors[tabId] || DEFAULT_TAB_COLOR;
+}
 
 // ---------------- Utilities ----------------
 
@@ -284,6 +341,14 @@ function formatTimestamp(ms) {
   const n = Number(ms);
   if (!n) return '';
   return new Date(n).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function formatQuoteDate(dateStr) {
+  if (!dateStr) return '';
+  const parts = String(dateStr).split('-');
+  if (parts.length !== 3) return dateStr;
+  const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  if (isNaN(d.getTime())) return dateStr;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 async function apiCall(action, params) {
@@ -318,7 +383,8 @@ async function withOptimisticUpdate(apply, request, reconcile, revert) {
     reconcile(data);
     saveCachedData({
       movies: state.movies, quotes: state.quotes, recipes: state.recipes,
-      templates: state.templates, customTabs: state.customTabs, customTabsData: state.customTabsData
+      templates: state.templates, customTabs: state.customTabs, customTabsData: state.customTabsData,
+      tabColors: state.tabColors
     });
   } catch (err) {
     revert();
@@ -349,7 +415,12 @@ function renderNav() {
   const customTabsNav = state.customTabs.map(function (t) { return { id: t.id, label: t.tabName }; });
   const all = staticTabs.concat(customTabsNav);
   document.getElementById('tabs').innerHTML = all.map(function (t) {
-    return '<button class="tab-btn ' + (state.activeTab === t.id ? 'active' : '') + '" onclick="switchTab(\'' + t.id + '\')">' +
+    const active = state.activeTab === t.id;
+    const color = getTabColor(t.id);
+    const style = active
+      ? ' style="background:color-mix(in srgb, ' + color + ' 20%, transparent);color:' + color + ';border-color:color-mix(in srgb, ' + color + ' 40%, transparent)"'
+      : '';
+    return '<button class="tab-btn ' + (active ? 'active' : '') + '"' + style + ' onclick="switchTab(\'' + t.id + '\')">' +
       escapeHtml(t.label) + '</button>';
   }).join('');
 }
@@ -362,6 +433,7 @@ function switchTab(id) {
 function render() {
   renderNav();
   const content = document.getElementById('content');
+  content.style.setProperty('--tab-accent', getTabColor(state.activeTab));
   if (state.activeTab === 'movies') content.innerHTML = renderMovies();
   else if (state.activeTab === 'quotes') content.innerHTML = renderQuotes();
   else if (state.activeTab === 'recipes') content.innerHTML = renderRecipes();
@@ -378,6 +450,7 @@ function applyData(data) {
   state.templates = data.templates || [];
   state.customTabs = data.customTabs || [];
   state.customTabsData = data.customTabsData || {};
+  state.tabColors = data.tabColors || {};
 }
 
 function loadCachedData() {
@@ -645,7 +718,7 @@ function renderQuotes() {
 }
 
 function renderQuoteRow(q) {
-  const meta = [q.date ? escapeHtml(q.date) : '', q.source ? escapeHtml(q.source) : ''].filter(Boolean).join(' · ');
+  const meta = [q.date ? escapeHtml(formatQuoteDate(q.date)) : '', q.source ? escapeHtml(q.source) : ''].filter(Boolean).join(' · ');
   return '' +
     '<div class="row">' +
       '<div class="row-main">' +
@@ -674,7 +747,7 @@ function quoteModalHtml(q) {
     '<label>Quote text</label>' +
     '<textarea id="quote-text" rows="3" placeholder="The quote itself">' + escapeHtml(q.text || '') + '</textarea>' +
     '<label>Date (optional)</label>' +
-    '<input type="text" id="quote-date" value="' + escapeAttr(q.date || '') + '" placeholder="e.g. 6/9/25, or leave blank">' +
+    '<input type="date" id="quote-date" value="' + escapeAttr(q.date || '') + '">' +
     '<label>Source (optional)</label>' +
     '<input type="text" id="quote-source" value="' + escapeAttr(q.source || '') + '" placeholder="e.g. a name, or context">' +
     '<div class="modal-actions">' +
@@ -890,6 +963,10 @@ function renderTemplates() {
   return '' +
     '<div class="screen-head"><h2>Templates</h2><button class="btn btn-primary" onclick="openAddTemplateModal()">+ New Template</button></div>' +
     '<section class="panel">' +
+      '<div class="panel-head"><h3>Tab Colors</h3></div>' +
+      getAllColorableTabs().map(renderTabColorRow).join('') +
+    '</section>' +
+    '<section class="panel">' +
       '<div class="panel-head"><h3>Templates <span class="count">' + state.templates.length + '</span></h3></div>' +
       (state.templates.length === 0 ? emptyState('No templates yet.') : state.templates.map(renderTemplateCard).join('')) +
     '</section>' +
@@ -897,6 +974,36 @@ function renderTemplates() {
       '<div class="panel-head"><h3>Custom Tabs <span class="count">' + state.customTabs.length + '</span></h3></div>' +
       (state.customTabs.length === 0 ? emptyState('No custom tabs created yet.') : state.customTabs.map(renderCustomTabAdminRow).join('')) +
     '</section>';
+}
+
+function getAllColorableTabs() {
+  const staticTabs = [
+    { id: 'movies', label: 'Movies' },
+    { id: 'quotes', label: 'Quotes' },
+    { id: 'recipes', label: 'Recipes' },
+    { id: 'templates', label: 'Templates' }
+  ];
+  return staticTabs.concat(state.customTabs.map(function (t) { return { id: t.id, label: t.tabName }; }));
+}
+
+function renderTabColorRow(t) {
+  return '' +
+    '<div class="row">' +
+      '<div class="row-main"><div class="row-title">' + escapeHtml(t.label) + '</div></div>' +
+      '<div class="row-actions">' +
+        '<input class="color-swatch" type="color" value="' + escapeAttr(getTabColor(t.id)) + '" onchange="setTabColor(\'' + t.id + '\', this.value)">' +
+      '</div>' +
+    '</div>';
+}
+
+async function setTabColor(tabId, color) {
+  const prevColors = Object.assign({}, state.tabColors);
+  await withOptimisticUpdate(
+    function () { state.tabColors = Object.assign({}, state.tabColors); state.tabColors[tabId] = color; },
+    function () { return apiCall('setTabColor', { tabId: tabId, color: color }); },
+    function (data) { state.tabColors = data.tabColors; },
+    function () { state.tabColors = prevColors; }
+  );
 }
 
 function fieldTypeLabel(type) {
